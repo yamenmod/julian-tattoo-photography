@@ -11,6 +11,7 @@ const {
   serializeSizeStock,
   normalizeSizeStockMap,
 } = require("../utils/sizeStock");
+const getJwtSecret = require("../utils/jwtSecret");
 
 // Product catalogue, image normalization, and board recommendation logic.
 
@@ -917,10 +918,7 @@ const recommendBoards = async (req, res) => {
       if (authorizationHeader.startsWith("Bearer ")) {
         try {
           const token = authorizationHeader.split(" ")[1];
-          const decoded = jwt.verify(
-            token,
-            process.env.JWT_SECRET || "secret123",
-          );
+          const decoded = jwt.verify(token, getJwtSecret());
 
           const [users] = await db.query(
             "SELECT weight FROM users WHERE id = ? LIMIT 1",

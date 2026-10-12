@@ -15,10 +15,31 @@ const { updateCustomerStatus } = require("./controllers/customerController");
 const initDatabase = require("./db/init");
 
 const app = express();
+const localOrigins = ["http://localhost:3000", "http://localhost:3001"];
+const configuredOrigins = (process.env.FRONTEND_ORIGIN || "")
+  .split(",")
+  .map((origin) => origin.trim().replace(/\/$/, ""))
+  .filter(Boolean);
+const allowedOrigins = [...new Set([...localOrigins, ...configuredOrigins])];
+const initializeDatabase = process.env.INIT_DATABASE !== "false";
 
-app.use(cors());
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("CORS origin is not allowed"));
+    },
+  }),
+);
 app.use(express.json({ limit: "100mb" }));
 app.use(express.urlencoded({ limit: "100mb", extended: true }));
+
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok" });
+});
 
 // Log all incoming requests
 app.use((req, res, next) => {
@@ -92,13 +113,18 @@ app.use((error, req, res, next) => {
 const startServer = async () => {
   try {
     console.log("🚀 Starting server...");
-    console.log("🗄️  Initializing database connection...");
+    const port = Number(process.env.PORT || 5000);
 
-    await initDatabase();
+    if (initializeDatabase) {
+      console.log("🗄️  Initializing database connection...");
+      await initDatabase();
+    } else {
+      console.log("🗄️  Database initialization skipped (INIT_DATABASE=false)");
+    }
 
-    app.listen(5000, () => {
-      console.log("✅ Server running on port 5000");
-      console.log("📝 Ready to accept requests at http://localhost:5000");
+    app.listen(port, "0.0.0.0", () => {
+      console.log(`✅ Server running on port ${port}`);
+      console.log(`📝 Ready to accept requests on port ${port}`);
     });
   } catch (error) {
     console.error("❌ Server startup failed:", error.message);

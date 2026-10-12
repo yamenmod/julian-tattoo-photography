@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import axios from "axios";
+import api from "../utils/api";
 
 const locationsByCountry = {
   Israel: ["Tel Aviv", "Haifa", "Jerusalem Coast", "Ashkelon", "Netanya"],
@@ -84,7 +84,7 @@ function PhotographyBooking() {
     setSubmitMessage("");
 
     try {
-      const response = await axios.post("/api/contact/booking", {
+      const response = await api.post("/api/contact/booking", {
         fullName: trimmedName,
         email: trimmedEmail,
         phone: trimmedPhone,

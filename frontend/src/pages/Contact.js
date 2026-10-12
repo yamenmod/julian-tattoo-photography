@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import axios from "axios";
+import api from "../utils/api";
 
 const initialForm = {
   name: "",
@@ -57,7 +57,7 @@ function Contact({ onNavigate }) {
     setSubmitMessage("");
 
     try {
-      const response = await axios.post("/api/contact/submit", {
+      const response = await api.post("/api/contact/submit", {
         name: trimmedName,
         email: trimmedEmail,
         subject: trimmedSubject,

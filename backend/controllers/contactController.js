@@ -54,11 +54,13 @@ const submitContactForm = async (req, res) => {
     });
 
     if (!result.success) {
-      const message =
-        result.reason === "transporter-missing" ||
-        result.reason === "recipient-missing"
-          ? "Email delivery is not configured yet. Please set up the contact email in the backend environment before sending messages."
-          : "Failed to send message. Please try again later.";
+      const message = [
+        "transporter-missing",
+        "recipient-missing",
+        "resend-not-configured",
+      ].includes(result.reason)
+        ? "Email delivery is not configured yet. Please set up the backend email provider before sending messages."
+        : "Email delivery failed. Your message was not sent; please try again later.";
 
       console.error("[contactController] failed to send contact email", result);
       return res
@@ -163,11 +165,13 @@ const submitBookingRequest = async (req, res) => {
     });
 
     if (!result.success) {
-      const responseMessage =
-        result.reason === "transporter-missing" ||
-        result.reason === "recipient-missing"
-          ? "Booking requests are not configured yet. Please set up the business email in the backend environment before sending booking requests."
-          : "Unable to send your booking request right now. Please try again later or contact Julian directly.";
+      const responseMessage = [
+        "transporter-missing",
+        "recipient-missing",
+        "resend-not-configured",
+      ].includes(result.reason)
+        ? "Booking email delivery is not configured yet. Please set up the backend email provider before sending booking requests."
+        : "Booking email delivery failed. Your request was not sent; please try again later or contact Julian directly.";
 
       console.error(
         "[contactController] failed to send booking request",

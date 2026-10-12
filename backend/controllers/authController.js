@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const db = require("../db/connection");
 const { createMailTransporter } = require("../utils/mailer");
+const getJwtSecret = require("../utils/jwtSecret");
 
 // Authentication and profile endpoints.
 
@@ -49,7 +50,7 @@ const getToken = (user) =>
       username: user.username,
       role: user.role,
     },
-    process.env.JWT_SECRET || "secret123",
+    getJwtSecret(),
     { expiresIn: "7d" },
   );
 

@@ -1,4 +1,5 @@
 const nodemailer = require("nodemailer");
+const axios = require("axios");
 const db = require("../db/connection");
 const {
   buildOrderEmailHtml,
@@ -49,6 +50,92 @@ const getFromAddress = () => {
   return `${name} <${from}>`;
 };
 
+const sendWithResend = async ({ from, to, replyTo, subject, html, text }) => {
+  const apiKey = (process.env.RESEND_API_KEY || "").trim();
+  const resendFrom = (process.env.EMAIL_FROM || "").trim();
+
+  if (!apiKey || !resendFrom) {
+    return {
+      success: false,
+      reason: "resend-not-configured",
+      error: "RESEND_API_KEY and EMAIL_FROM are required for Resend delivery",
+    };
+  }
+
+  try {
+    const response = await axios.post(
+      "https://api.resend.com/emails",
+      {
+        from: resendFrom,
+        to: [to],
+        reply_to: replyTo,
+        subject,
+        html,
+        text,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        timeout: 15000,
+      },
+    );
+
+    if (!response.data?.id) {
+      return {
+        success: false,
+        reason: "resend-delivery-failed",
+        error: "Resend did not return an email id",
+      };
+    }
+
+    return { success: true, messageId: response.data.id };
+  } catch (error) {
+    return {
+      success: false,
+      reason: "resend-delivery-failed",
+      error:
+        error.response?.data?.message ||
+        error.message ||
+        "Resend delivery failed",
+    };
+  }
+};
+
+const deliverEmail = async (mailOptions) => {
+  const provider = (process.env.EMAIL_PROVIDER || "smtp").trim().toLowerCase();
+
+  if (provider === "resend") {
+    return sendWithResend(mailOptions);
+  }
+
+  const transporter = createTransporter();
+  if (!transporter) {
+    return { success: false, reason: "transporter-missing" };
+  }
+
+  try {
+    await transporter.verify();
+  } catch (verifyErr) {
+    console.error(
+      "[emailService] SMTP verify failed",
+      verifyErr.message || verifyErr,
+    );
+  }
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    return {
+      success: false,
+      reason: "smtp-delivery-failed",
+      error: error.message || String(error),
+    };
+  }
+};
+
 const sendOrderConfirmation = async ({
   orderId,
   userId,
@@ -57,11 +144,6 @@ const sendOrderConfirmation = async ({
   if (!orderId || !userId) {
     console.error("[emailService] orderId and userId are required");
     return { success: false, reason: "missing-parameters" };
-  }
-
-  const transporter = createTransporter();
-  if (!transporter) {
-    return { success: false, reason: "transporter-missing" };
   }
 
   try {
@@ -133,15 +215,6 @@ const sendOrderConfirmation = async ({
       viewOrderUrl: "#",
     });
 
-    try {
-      await transporter.verify();
-    } catch (verifyErr) {
-      console.error(
-        "[emailService] SMTP verify failed",
-        verifyErr.message || verifyErr,
-      );
-    }
-
     const mailOptions = {
       from: getFromAddress(),
       to: customerEmail,
@@ -150,14 +223,18 @@ const sendOrderConfirmation = async ({
       text: `Thank you for your order #${orderRecord.id}. Total: ${formatMoney(total)}. Status: ${orderRecord.status}`,
     };
 
-    const info = await transporter.sendMail(mailOptions);
+    const result = await deliverEmail(mailOptions);
+    if (!result.success) {
+      return result;
+    }
+
     console.log("[emailService] order confirmation sent", {
       orderId,
       to: customerEmail,
-      messageId: info.messageId,
+      messageId: result.messageId,
     });
 
-    return { success: true, messageId: info.messageId };
+    return result;
   } catch (err) {
     console.error(
       "[emailService] failed to send order confirmation",
@@ -173,11 +250,6 @@ const sendContactEmail = async ({ name, email, subject, message }) => {
       "[emailService] name, email, subject, and message are required",
     );
     return { success: false, reason: "missing-parameters" };
-  }
-
-  const transporter = createTransporter();
-  if (!transporter) {
-    return { success: false, reason: "transporter-missing" };
   }
 
   try {
@@ -242,15 +314,6 @@ const sendContactEmail = async ({ name, email, subject, message }) => {
       </html>
     `;
 
-    try {
-      await transporter.verify();
-    } catch (verifyErr) {
-      console.error(
-        "[emailService] SMTP verify failed",
-        verifyErr.message || verifyErr,
-      );
-    }
-
     const mailOptions = {
       from: getFromAddress(),
       to: adminEmail,
@@ -260,15 +323,19 @@ const sendContactEmail = async ({ name, email, subject, message }) => {
       text: `Name: ${name}\nEmail: ${email}\nSubject: ${subject}\n\nMessage:\n${message}`,
     };
 
-    const info = await transporter.sendMail(mailOptions);
+    const result = await deliverEmail(mailOptions);
+    if (!result.success) {
+      return result;
+    }
+
     console.log("[emailService] contact email sent", {
       to: adminEmail,
       from: email,
       subject,
-      messageId: info.messageId,
+      messageId: result.messageId,
     });
 
-    return { success: true, messageId: info.messageId };
+    return result;
   } catch (err) {
     console.error(
       "[emailService] failed to send contact email",
@@ -299,11 +366,6 @@ const sendBookingRequestEmail = async ({
   if (requestType === "Surf Photography" && (!country || !phone)) {
     console.error("[emailService] photography booking details are incomplete");
     return { success: false, reason: "missing-photography-details" };
-  }
-
-  const transporter = createTransporter();
-  if (!transporter) {
-    return { success: false, reason: "transporter-missing" };
   }
 
   try {
@@ -351,15 +413,6 @@ const sendBookingRequestEmail = async ({
       </html>
     `;
 
-    try {
-      await transporter.verify();
-    } catch (verifyErr) {
-      console.error(
-        "[emailService] SMTP verify failed",
-        verifyErr.message || verifyErr,
-      );
-    }
-
     const mailOptions = {
       from: getFromAddress(),
       to: adminEmail,
@@ -369,15 +422,19 @@ const sendBookingRequestEmail = async ({
       text: `Booking Type: ${requestType}\nFull Name: ${fullName}\nEmail: ${email}\nPhone: ${phone || "Not provided"}\nCountry: ${country || "Not provided"}\nPreferred Date: ${preferredDate}\nPreferred Location: ${preferredLocation}\n\nAdditional Message:\n${message || "No additional notes provided."}`,
     };
 
-    const info = await transporter.sendMail(mailOptions);
+    const result = await deliverEmail(mailOptions);
+    if (!result.success) {
+      return result;
+    }
+
     console.log("[emailService] booking request email sent", {
       to: adminEmail,
       from: email,
       bookingType: requestType,
-      messageId: info.messageId,
+      messageId: result.messageId,
     });
 
-    return { success: true, messageId: info.messageId };
+    return result;
   } catch (err) {
     console.error(
       "[emailService] failed to send booking request email",
