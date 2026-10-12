@@ -21,7 +21,6 @@ const configuredOrigins = (process.env.FRONTEND_ORIGIN || "")
   .map((origin) => origin.trim().replace(/\/$/, ""))
   .filter(Boolean);
 const allowedOrigins = [...new Set([...localOrigins, ...configuredOrigins])];
-const initializeDatabase = process.env.INIT_DATABASE !== "false";
 
 app.use(
   cors({
@@ -115,11 +114,11 @@ const startServer = async () => {
     console.log("🚀 Starting server...");
     const port = Number(process.env.PORT || 5000);
 
-    if (initializeDatabase) {
+    if (process.env.INIT_DATABASE === "false") {
+      console.log("🗄️  Database initialization skipped (INIT_DATABASE=false)");
+    } else {
       console.log("🗄️  Initializing database connection...");
       await initDatabase();
-    } else {
-      console.log("🗄️  Database initialization skipped (INIT_DATABASE=false)");
     }
 
     app.listen(port, "0.0.0.0", () => {
