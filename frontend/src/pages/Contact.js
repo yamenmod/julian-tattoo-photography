@@ -1,197 +1,177 @@
-/**
- * Contact Page
- * Contact information page for bulk orders and customer support
- * Displays contact details for users who need to place large orders
- */
 import React, { useState } from "react";
 import axios from "axios";
-import Header from "../components/Header";
-import Footer from "../components/Footer";
-import "./Contact.css";
 
-function Contact({
-  user,
-  preferredGender,
-  onPreferredGenderChange,
-  currentPage,
-  onNavigate,
-  onLogout,
-  cartCount = 0,
-}) {
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    subject: "",
-    message: "",
-  });
+const initialForm = {
+  name: "",
+  email: "",
+  subject: "",
+  message: "",
+};
+
+function Contact({ onNavigate }) {
+  const [formData, setFormData] = useState(initialForm);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState(null); // 'success' | 'error' | null
-  const [errorMessage, setErrorMessage] = useState("");
+  const [submitStatus, setSubmitStatus] = useState(null);
+  const [submitMessage, setSubmitMessage] = useState("");
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setFormData((previous) => ({ ...previous, [name]: value }));
     setSubmitStatus(null);
-    setErrorMessage("");
+    setSubmitMessage("");
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    const trimmedName = formData.name.trim();
+    const trimmedEmail = formData.email.trim();
+    const trimmedSubject = formData.subject.trim();
+    const trimmedMessage = formData.message.trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!trimmedName || !trimmedEmail || !trimmedSubject || !trimmedMessage) {
+      setSubmitStatus("error");
+      setSubmitMessage(
+        "Please complete all required fields before sending your message.",
+      );
+      return;
+    }
+
+    if (!emailRegex.test(trimmedEmail)) {
+      setSubmitStatus("error");
+      setSubmitMessage("Please enter a valid email address.");
+      return;
+    }
+
+    if (trimmedMessage.length > 5000) {
+      setSubmitStatus("error");
+      setSubmitMessage(
+        "Your message is too long. Please keep it under 5000 characters.",
+      );
+      return;
+    }
+
     setIsSubmitting(true);
     setSubmitStatus(null);
-    setErrorMessage("");
+    setSubmitMessage("");
 
     try {
-      const response = await axios.post("/api/contact/submit", formData);
-      
-      if (response.status === 200) {
-        setSubmitStatus("success");
-        setFormData({ name: "", email: "", subject: "", message: "" });
-      }
+      const response = await axios.post("/api/contact/submit", {
+        name: trimmedName,
+        email: trimmedEmail,
+        subject: trimmedSubject,
+        message: trimmedMessage,
+      });
+
+      setSubmitStatus("success");
+      setSubmitMessage(
+        response.data?.message || "Your message was sent successfully.",
+      );
+      setFormData(initialForm);
     } catch (error) {
       setSubmitStatus("error");
-      setErrorMessage(
-        error.response?.data?.message || 
-        "Failed to send message. Please try again later."
+      setSubmitMessage(
+        error.response?.data?.message ||
+          "Failed to send message. Please try again later.",
       );
     } finally {
       setIsSubmitting(false);
     }
   };
+
   return (
-    <div className="ps-page">
-      <Header
-        user={user}
-        preferredGender={preferredGender}
-        onPreferredGenderChange={onPreferredGenderChange}
-        currentPage={currentPage}
-        onNavigate={onNavigate}
-        onLogout={onLogout}
-        cartCount={cartCount}
-      />
+    <section className="portfolio-page-section portfolio-contact-page">
+      <div className="portfolio-shell contact-shell">
+        <div className="portfolio-section-heading compact-heading">
+          <p className="portfolio-kicker">Contact</p>
+          <h1>Contact Julian</h1>
+          <p>
+            For commissions, collaborations, or a session enquiry, send a note
+            below.
+          </p>
+        </div>
 
-      <main className="ps-main contact-page-main">
-        <div className="ps-shell">
-          <div className="contact-hero">
-            <p className="ps-pill">Get in touch</p>
-            <h1 className="ps-title">Contact us</h1>
-            <p className="ps-lead">
-              Reach the Plage Surf team for orders, products, or sizing help.
-            </p>
-          </div>
+        <div className="portfolio-form-card contact-form-card">
+          <form className="portfolio-form" onSubmit={handleSubmit} noValidate>
+            <div className="portfolio-field-row">
+              <label>
+                <span>Name</span>
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  placeholder="Your name"
+                  required
+                />
+              </label>
 
-          <div className="contact-cards">
-            {[
-              {
-                title: "Address",
-                value: "חוף הסטודנטים",
-                icon: "Location",
-              },
-              {
-                title: "Phone",
-                value: "052-6387156",
-                icon: "Phone",
-              },
-              {
-                title: "Email",
-                value: "yamenwaseem@gmail.com",
-                icon: "Email",
-              },
-              {
-                title: "Hours",
-                value: "Sunday 8 AM - 6 PM | Monday closed",
-                icon: "Hours",
-              },
-            ].map((item) => (
-              <div key={item.title} className="ps-surface contact-card">
-                <div className="contact-card-icon">
-                  {item.icon}
-                </div>
-                <h3 className="contact-card-title">
-                  {item.title}
-                </h3>
-                <p className="contact-card-value">
-                  {item.value}
-                </p>
-              </div>
-            ))}
-          </div>
+              <label>
+                <span>Email</span>
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="you@example.com"
+                  required
+                />
+              </label>
+            </div>
 
-          <div className="contact-panel">
-            <h2 className="contact-panel-title">
-              Send us a Message
-            </h2>
-
-            <form
-              className="contact-form"
-              onSubmit={handleSubmit}
-            >
-              <input
-                type="text"
-                name="name"
-                placeholder="Your Name"
-                value={formData.name}
-                onChange={handleChange}
-                required
-                className="contact-input"
-              />
-
-              <input
-                type="email"
-                name="email"
-                placeholder="Your Email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-                className="contact-input"
-              />
-
+            <label>
+              <span>Subject</span>
               <input
                 type="text"
                 name="subject"
-                placeholder="Subject"
                 value={formData.subject}
                 onChange={handleChange}
+                placeholder="How can Julian help?"
                 required
-                className="contact-input"
               />
+            </label>
 
+            <label>
+              <span>Message</span>
               <textarea
                 name="message"
-                placeholder="Your Message"
                 value={formData.message}
                 onChange={handleChange}
-                rows="6"
+                rows="7"
+                placeholder="Tell Julian about your idea or session request."
                 required
-                className="contact-textarea"
               />
+            </label>
 
-              <button 
-                type="submit" 
-                className="ps-btn ps-btn-primary"
+            <div className="portfolio-form-actions">
+              <button
+                type="submit"
+                className="portfolio-primary-button"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? "Sending..." : "Send Message"}
               </button>
+              <button
+                type="button"
+                className="portfolio-secondary-button"
+                onClick={() => onNavigate("booking")}
+              >
+                Book a Session
+              </button>
+            </div>
 
-              {submitStatus === "success" && (
-                <p className="ps-lead" style={{ color: "#166534", marginTop: "16px" }}>
-                  Thank you for your message! We'll be in touch soon.
-                </p>
-              )}
+            {submitStatus === "success" && (
+              <p className="portfolio-form-feedback success">{submitMessage}</p>
+            )}
 
-              {submitStatus === "error" && (
-                <p className="ps-lead" style={{ color: "#991b1b", marginTop: "16px" }}>
-                  {errorMessage}
-                </p>
-              )}
-            </form>
-          </div>
+            {submitStatus === "error" && (
+              <p className="portfolio-form-feedback error">{submitMessage}</p>
+            )}
+          </form>
         </div>
-      </main>
-
-      <Footer />
-    </div>
+      </div>
+    </section>
   );
 }
 

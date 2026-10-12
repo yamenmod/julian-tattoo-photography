@@ -1,80 +1,194 @@
-const { sendContactEmail } = require("../services/emailService");
+const {
+  sendContactEmail,
+  sendBookingRequestEmail,
+} = require("../services/emailService");
+
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const normalizeText = (value) => String(value ?? "").trim();
 
 const submitContactForm = async (req, res) => {
   try {
     const { name, email, subject, message } = req.body;
 
-    // Validate required fields
     if (!name || !email || !subject || !message) {
-      return res.status(400).json({ 
-        message: "All fields are required: name, email, subject, message" 
+      return res.status(400).json({
+        message: "All fields are required: name, email, subject, and message.",
       });
     }
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({ 
-        message: "Invalid email address" 
-      });
+    const safeName = normalizeText(name);
+    const safeEmail = normalizeText(email).toLowerCase();
+    const safeSubject = normalizeText(subject);
+    const safeMessage = normalizeText(message);
+
+    if (!emailRegex.test(safeEmail)) {
+      return res
+        .status(400)
+        .json({ message: "Please enter a valid email address." });
     }
 
-    // Trim and sanitize inputs
-    const sanitizedData = {
-      name: name.trim(),
-      email: email.trim().toLowerCase(),
-      subject: subject.trim(),
-      message: message.trim(),
-    };
-
-    // Validate field lengths
-    if (sanitizedData.name.length > 100) {
-      return res.status(400).json({ 
-        message: "Name is too long (max 100 characters)" 
-      });
+    if (safeName.length > 100) {
+      return res
+        .status(400)
+        .json({
+          message: "Name is too long. Please keep it under 100 characters.",
+        });
     }
 
-    if (sanitizedData.subject.length > 200) {
-      return res.status(400).json({ 
-        message: "Subject is too long (max 200 characters)" 
-      });
+    if (safeSubject.length > 200) {
+      return res
+        .status(400)
+        .json({
+          message: "Subject is too long. Please keep it under 200 characters.",
+        });
     }
 
-    if (sanitizedData.message.length > 5000) {
-      return res.status(400).json({ 
-        message: "Message is too long (max 5000 characters)" 
-      });
+    if (safeMessage.length > 5000) {
+      return res
+        .status(400)
+        .json({
+          message: "Message is too long. Please keep it under 5000 characters.",
+        });
     }
 
-    // Send email
-    const result = await sendContactEmail(sanitizedData);
+    const result = await sendContactEmail({
+      name: safeName,
+      email: safeEmail,
+      subject: safeSubject,
+      message: safeMessage,
+    });
 
     if (!result.success) {
+      const message =
+        result.reason === "transporter-missing" ||
+        result.reason === "recipient-missing"
+          ? "Email delivery is not configured yet. Please set up the contact email in the backend environment before sending messages."
+          : "Failed to send message. Please try again later.";
+
       console.error("[contactController] failed to send contact email", result);
-      return res.status(500).json({ 
-        message: "Failed to send message. Please try again later.",
-        error: result.error || result.reason
-      });
+      return res
+        .status(500)
+        .json({ message, error: result.error || result.reason });
     }
 
     console.log("[contactController] contact form submitted successfully", {
-      name: sanitizedData.name,
-      email: sanitizedData.email,
-      subject: sanitizedData.subject,
+      name: safeName,
+      email: safeEmail,
+      subject: safeSubject,
     });
 
-    return res.status(200).json({ 
-      message: "Message sent successfully",
-      messageId: result.messageId
+    return res.status(200).json({
+      message: "Your message was sent successfully.",
+      messageId: result.messageId,
     });
   } catch (error) {
     console.error("[contactController] error processing contact form", error);
-    return res.status(500).json({ 
-      message: "Server error. Please try again later." 
+    return res
+      .status(500)
+      .json({ message: "Server error. Please try again later." });
+  }
+};
+
+const submitBookingRequest = async (req, res) => {
+  try {
+    const {
+      fullName,
+      email,
+      preferredDate,
+      preferredLocation,
+      sessionType,
+      message,
+    } = req.body;
+
+    if (
+      !fullName ||
+      !email ||
+      !preferredDate ||
+      !preferredLocation ||
+      !sessionType
+    ) {
+      return res.status(400).json({
+        message:
+          "Full name, email, preferred date, location, and session type are required.",
+      });
+    }
+
+    const safeFullName = normalizeText(fullName);
+    const safeEmail = normalizeText(email).toLowerCase();
+    const safePreferredDate = normalizeText(preferredDate);
+    const safePreferredLocation = normalizeText(preferredLocation);
+    const safeSessionType = normalizeText(sessionType);
+    const safeMessage = normalizeText(message);
+
+    if (!emailRegex.test(safeEmail)) {
+      return res
+        .status(400)
+        .json({ message: "Please enter a valid email address." });
+    }
+
+    if (safeFullName.length > 120) {
+      return res
+        .status(400)
+        .json({
+          message:
+            "Full name is too long. Please keep it under 120 characters.",
+        });
+    }
+
+    if (safeMessage.length > 2000) {
+      return res
+        .status(400)
+        .json({
+          message: "Message is too long. Please keep it under 2000 characters.",
+        });
+    }
+
+    const result = await sendBookingRequestEmail({
+      fullName: safeFullName,
+      email: safeEmail,
+      preferredDate: safePreferredDate,
+      preferredLocation: safePreferredLocation,
+      sessionType: safeSessionType,
+      message: safeMessage,
     });
+
+    if (!result.success) {
+      const responseMessage =
+        result.reason === "transporter-missing" ||
+        result.reason === "recipient-missing"
+          ? "Booking requests are not configured yet. Please set up the business email in the backend environment before sending booking requests."
+          : "Unable to send your booking request right now. Please try again later or contact Julian directly.";
+
+      console.error(
+        "[contactController] failed to send booking request",
+        result,
+      );
+      return res
+        .status(500)
+        .json({
+          message: responseMessage,
+          error: result.error || result.reason,
+        });
+    }
+
+    return res.status(200).json({
+      message:
+        "Your booking request was sent successfully. Julian will confirm the session once available.",
+      messageId: result.messageId,
+    });
+  } catch (error) {
+    console.error(
+      "[contactController] error processing booking request",
+      error,
+    );
+    return res
+      .status(500)
+      .json({ message: "Server error. Please try again later." });
   }
 };
 
 module.exports = {
   submitContactForm,
+  submitBookingRequest,
 };

@@ -9,26 +9,44 @@ const {
   getVatRateFromDb,
 } = require("../utils/pricing");
 
+const normalizePassword = (value) =>
+  String(value ?? "").replace(/\s+/g, "").trim();
+
 const createTransporter = () => {
-  const user = (process.env.EMAIL_USER || "").trim();
-  const pass = (process.env.EMAIL_PASS || "").trim();
+  const user = (
+    process.env.SMTP_USER ||
+    process.env.EMAIL_USER ||
+    ""
+  ).trim();
+  const pass = normalizePassword(
+    process.env.SMTP_PASS || process.env.EMAIL_PASS,
+  );
 
   if (!user || !pass) {
-    console.error("[emailService] EMAIL_USER or EMAIL_PASS not configured");
+    console.error("[emailService] SMTP credentials are not configured");
     return null;
   }
 
   return nodemailer.createTransport({
-    host: (process.env.EMAIL_HOST || "smtp.gmail.com").trim(),
-    port: Number(process.env.EMAIL_PORT || 587),
-    secure: Number(process.env.EMAIL_PORT || 587) === 465,
+    host: (
+      process.env.SMTP_HOST ||
+      process.env.EMAIL_HOST ||
+      "smtp.gmail.com"
+    ).trim(),
+    port: Number(process.env.SMTP_PORT || process.env.EMAIL_PORT || 587),
+    secure: Number(process.env.SMTP_PORT || process.env.EMAIL_PORT || 587) === 465,
     auth: { user, pass },
   });
 };
 
 const getFromAddress = () => {
-  const from = (process.env.EMAIL_FROM || process.env.EMAIL_USER || "").trim();
-  const name = (process.env.EMAIL_FROM_NAME || "Plage Surf").trim();
+  const from = (
+    process.env.EMAIL_FROM ||
+    process.env.SMTP_USER ||
+    process.env.EMAIL_USER ||
+    ""
+  ).trim();
+  const name = (process.env.EMAIL_FROM_NAME || "Julian Photography").trim();
   return `${name} <${from}>`;
 };
 
@@ -152,7 +170,9 @@ const sendOrderConfirmation = async ({
 
 const sendContactEmail = async ({ name, email, subject, message }) => {
   if (!name || !email || !subject || !message) {
-    console.error("[emailService] name, email, subject, and message are required");
+    console.error(
+      "[emailService] name, email, subject, and message are required",
+    );
     return { success: false, reason: "missing-parameters" };
   }
 
@@ -162,7 +182,16 @@ const sendContactEmail = async ({ name, email, subject, message }) => {
   }
 
   try {
-    const adminEmail = (process.env.CONTACT_EMAIL || "waseemyamen1@gmail.com").trim();
+    const adminEmail = (
+      process.env.JULIAN_EMAIL ||
+      process.env.CONTACT_EMAIL ||
+      process.env.EMAIL_USER ||
+      process.env.SMTP_USER ||
+      ""
+    ).trim();
+    if (!adminEmail) {
+      return { success: false, reason: "recipient-missing" };
+    }
 
     const html = `
       <!DOCTYPE html>
@@ -207,7 +236,7 @@ const sendContactEmail = async ({ name, email, subject, message }) => {
           </div>
           
           <div class="footer">
-            This message was sent from the Plage Surf website contact form.
+            This message was sent from the Julian Photography website contact form.
           </div>
         </div>
       </body>
@@ -227,7 +256,7 @@ const sendContactEmail = async ({ name, email, subject, message }) => {
       from: getFromAddress(),
       to: adminEmail,
       replyTo: email,
-      subject: `Contact Form: ${subject}`,
+      subject: "New Contact Message - Julian Photography",
       html,
       text: `Name: ${name}\nEmail: ${email}\nSubject: ${subject}\n\nMessage:\n${message}`,
     };
@@ -250,7 +279,111 @@ const sendContactEmail = async ({ name, email, subject, message }) => {
   }
 };
 
+const sendBookingRequestEmail = async ({
+  fullName,
+  email,
+  preferredDate,
+  preferredLocation,
+  sessionType,
+  message,
+}) => {
+  if (
+    !fullName ||
+    !email ||
+    !preferredDate ||
+    !preferredLocation ||
+    !sessionType
+  ) {
+    console.error("[emailService] booking request data is incomplete");
+    return { success: false, reason: "missing-parameters" };
+  }
+
+  const transporter = createTransporter();
+  if (!transporter) {
+    return { success: false, reason: "transporter-missing" };
+  }
+
+  try {
+    const adminEmail = (
+      process.env.JULIAN_EMAIL ||
+      process.env.CONTACT_EMAIL ||
+      process.env.EMAIL_USER ||
+      process.env.SMTP_USER ||
+      ""
+    ).trim();
+    if (!adminEmail) {
+      return { success: false, reason: "recipient-missing" };
+    }
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>New Booking Request</title>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 640px; margin: 0 auto; padding: 20px; }
+          .container { background: #f9f8f4; padding: 30px; border-radius: 12px; }
+          h1 { margin-top: 0; color: #1f1f1f; }
+          .field { margin-bottom: 18px; }
+          .label { font-weight: bold; color: #4f4d4a; margin-bottom: 4px; }
+          .value { background: #fff; padding: 10px 12px; border-left: 4px solid #b28d5d; }
+          .message { white-space: pre-wrap; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <h1>New Booking Request</h1>
+          <div class="field"><div class="label">Full Name:</div><div class="value">${fullName}</div></div>
+          <div class="field"><div class="label">Email:</div><div class="value">${email}</div></div>
+          <div class="field"><div class="label">Preferred Date:</div><div class="value">${preferredDate}</div></div>
+          <div class="field"><div class="label">Preferred Location:</div><div class="value">${preferredLocation}</div></div>
+          <div class="field"><div class="label">Session Type:</div><div class="value">${sessionType}</div></div>
+          <div class="field"><div class="label">Additional Message:</div><div class="value message">${message || "No additional notes provided."}</div></div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    try {
+      await transporter.verify();
+    } catch (verifyErr) {
+      console.error(
+        "[emailService] SMTP verify failed",
+        verifyErr.message || verifyErr,
+      );
+    }
+
+    const mailOptions = {
+      from: getFromAddress(),
+      to: adminEmail,
+      replyTo: email,
+      subject: "New Booking Request - Julian Photography",
+      html,
+      text: `Full Name: ${fullName}\nEmail: ${email}\nPreferred Date: ${preferredDate}\nPreferred Location: ${preferredLocation}\nSession Type: ${sessionType}\n\nAdditional Message:\n${message || "No additional notes provided."}`,
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log("[emailService] booking request email sent", {
+      to: adminEmail,
+      from: email,
+      sessionType,
+      messageId: info.messageId,
+    });
+
+    return { success: true, messageId: info.messageId };
+  } catch (err) {
+    console.error(
+      "[emailService] failed to send booking request email",
+      err.message || err,
+    );
+    return { success: false, error: err.message || String(err) };
+  }
+};
+
 module.exports = {
   sendOrderConfirmation,
   sendContactEmail,
+  sendBookingRequestEmail,
 };
