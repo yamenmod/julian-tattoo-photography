@@ -6,8 +6,12 @@ const initialForm = {
   email: "",
   preferredDate: "",
   preferredLocation: "",
-  sessionType: "",
   message: "",
+  style: "",
+  idea: "",
+  bodyLocationSize: "",
+  projectStory: "",
+  contraindications: "",
 };
 
 function Booking({ onNavigate }) {
@@ -30,8 +34,14 @@ function Booking({ onNavigate }) {
     const trimmedEmail = formData.email.trim();
     const trimmedDate = formData.preferredDate.trim();
     const trimmedLocation = formData.preferredLocation.trim();
-    const trimmedSessionType = formData.sessionType.trim();
     const trimmedMessage = formData.message.trim();
+    const projectSummary = [
+      `Preferred style: ${formData.style.trim() || "Not provided"}`,
+      `Idea: ${formData.idea.trim() || "Not provided"}`,
+      `Body location and size: ${formData.bodyLocationSize.trim() || "Not provided"}`,
+      `Project story: ${formData.projectStory.trim() || "Not provided"}`,
+      `Contraindications: ${formData.contraindications.trim() || "Not provided"}`,
+    ].join("\n");
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (
@@ -39,7 +49,6 @@ function Booking({ onNavigate }) {
       !trimmedEmail ||
       !trimmedDate ||
       !trimmedLocation ||
-      !trimmedSessionType ||
       !trimmedMessage
     ) {
       setSubmitStatus("error");
@@ -65,8 +74,8 @@ function Booking({ onNavigate }) {
         email: trimmedEmail,
         preferredDate: trimmedDate,
         preferredLocation: trimmedLocation,
-        sessionType: trimmedSessionType,
-        message: trimmedMessage,
+        bookingType: "Tattoo Booking",
+        message: `${trimmedMessage}\n\nProject details:\n${projectSummary}`,
       });
 
       setSubmitStatus("success");
@@ -150,27 +159,77 @@ function Booking({ onNavigate }) {
                   required
                 >
                   <option value="">Select a location</option>
-                  <option value="Ahangama">Ahangama</option>
-                  <option value="Weligama">Weligama</option>
-                  <option value="Other">Other</option>
+                  <option value="Haifa, Israel">Haifa, Israel</option>
+                  <option value="Weligama, Sri Lanka">
+                    Weligama, Sri Lanka
+                  </option>
                 </select>
+              </label>
+            </div>
+
+            <div className="booking-section-header booking-project-header">
+              <span>02</span>
+              <h2>PROJECT</h2>
+            </div>
+
+            <div className="booking-field-row">
+              <label>
+                <span>Preferred style *</span>
+                <input
+                  type="text"
+                  name="style"
+                  value={formData.style}
+                  onChange={handleChange}
+                  placeholder="Flowers, Leaves, Microrealist etc."
+                />
+              </label>
+
+              <label>
+                <span>Your idea *</span>
+                <input
+                  type="text"
+                  name="idea"
+                  value={formData.idea}
+                  onChange={handleChange}
+                  placeholder="Flowers and Leaves etc."
+                />
+              </label>
+            </div>
+
+            <div className="booking-field-row">
+              <label>
+                <span>Body location and size *</span>
+                <input
+                  type="text"
+                  name="bodyLocationSize"
+                  value={formData.bodyLocationSize}
+                  onChange={handleChange}
+                  placeholder="Left arm, 25x100cm"
+                />
+              </label>
+
+              <label>
+                <span>Tell me about it</span>
+                <input
+                  type="text"
+                  name="projectStory"
+                  value={formData.projectStory}
+                  onChange={handleChange}
+                  placeholder="If your project has a story"
+                />
               </label>
             </div>
 
             <div className="booking-field-row single-row">
               <label>
-                <span>Session type</span>
-                <select
-                  name="sessionType"
-                  value={formData.sessionType}
+                <span>Contraindications *</span>
+                <input
+                  type="text"
+                  name="contraindications"
+                  value={formData.contraindications}
                   onChange={handleChange}
-                  required
-                >
-                  <option value="">Select a session type</option>
-                  <option value="Surf Photography">Surf Photography</option>
-                  <option value="Ocean & Nature">Ocean & Nature</option>
-                  <option value="Other">Other</option>
-                </select>
+                  placeholder="Allergy to latex, nickel, diabetes, psoriasis etc."
+                />
               </label>
             </div>
 
@@ -182,7 +241,7 @@ function Booking({ onNavigate }) {
                   value={formData.message}
                   onChange={handleChange}
                   rows="5"
-                  placeholder="Tell Julian about your idea, location, or vision for the session."
+                  placeholder="Tell Julian about your tattoo idea, placement, style, or vision for the session."
                   required
                 />
               </label>

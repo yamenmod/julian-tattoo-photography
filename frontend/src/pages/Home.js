@@ -2,24 +2,20 @@ import React from "react";
 
 const galleryItems = [
   {
-    image:
-      "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80",
-    alt: "Ocean wave and surfer",
+    image: "/JulianHome4Photos/tattoo-01.jpeg",
+    alt: "Ornamental floral tattoo on the upper thigh",
   },
   {
-    image:
-      "https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=1200&q=80",
-    alt: "Ocean stills and sunlight",
+    image: "/JulianHome4Photos/tattoo-02.jpeg",
+    alt: "Floral tattoo across the hip and thigh",
   },
   {
-    image:
-      "https://images.unsplash.com/photo-1493558103817-58b2924b5715?auto=format&fit=crop&w=1200&q=80",
-    alt: "Beach portrait and motion",
+    image: "/JulianHome4Photos/tattoo-03.jpeg",
+    alt: "Fine-line floral tattoo on the upper leg",
   },
   {
-    image:
-      "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80",
-    alt: "Coastal warm light shot",
+    image: "/JulianHome4Photos/tattoo-04.jpeg",
+    alt: "Dragon tattoo sleeve in fine-line style",
   },
 ];
 
@@ -49,7 +45,7 @@ function Home({ onNavigate }) {
           </p>
 
           <div className="portfolio-home-cta-row">
-            <span className="portfolio-cta-label">Inquire</span>
+            <span className="portfolio-cta-label">Book Now</span>
             <button
               type="button"
               className="portfolio-cta-circle"
@@ -63,11 +59,12 @@ function Home({ onNavigate }) {
 
         <div className="portfolio-bio-block">
           <p>
-            Hi, I’m Julian, a surf and ocean photographer capturing authentic
-            moments in and around the waves. Based in Sri Lanka, I photograph
-            surfers, ocean life, and coastal stories with a natural, cinematic
-            style. Available for sessions in Ahangama, Weligama, and nearby
-            beaches.
+            Hi, I’m Julian — a tattoo artist and surf/ocean photographer based
+            in Sri Lanka. I create custom tattoos with a bold, natural, and
+            deeply personal aesthetic, while also capturing surf, ocean, and
+            coastal stories through a cinematic lens. Available for tattoo
+            commissions and photography sessions in Ahangama, Weligama, and
+            nearby beaches.
           </p>
         </div>
       </div>

@@ -29,27 +29,21 @@ const submitContactForm = async (req, res) => {
     }
 
     if (safeName.length > 100) {
-      return res
-        .status(400)
-        .json({
-          message: "Name is too long. Please keep it under 100 characters.",
-        });
+      return res.status(400).json({
+        message: "Name is too long. Please keep it under 100 characters.",
+      });
     }
 
     if (safeSubject.length > 200) {
-      return res
-        .status(400)
-        .json({
-          message: "Subject is too long. Please keep it under 200 characters.",
-        });
+      return res.status(400).json({
+        message: "Subject is too long. Please keep it under 200 characters.",
+      });
     }
 
     if (safeMessage.length > 5000) {
-      return res
-        .status(400)
-        .json({
-          message: "Message is too long. Please keep it under 5000 characters.",
-        });
+      return res.status(400).json({
+        message: "Message is too long. Please keep it under 5000 characters.",
+      });
     }
 
     const result = await sendContactEmail({
@@ -98,19 +92,29 @@ const submitBookingRequest = async (req, res) => {
       preferredDate,
       preferredLocation,
       sessionType,
+      bookingType,
+      country,
+      phone,
       message,
     } = req.body;
 
+    const requestType = normalizeText(
+      bookingType || sessionType || "Tattoo Booking",
+    );
+
+    if (!fullName || !email || !preferredDate || !preferredLocation) {
+      return res.status(400).json({
+        message: "Full name, email, preferred date, and location are required.",
+      });
+    }
+
     if (
-      !fullName ||
-      !email ||
-      !preferredDate ||
-      !preferredLocation ||
-      !sessionType
+      requestType === "Surf Photography" &&
+      (!country || !phone || !message)
     ) {
       return res.status(400).json({
         message:
-          "Full name, email, preferred date, location, and session type are required.",
+          "Country, phone number, and project details are required for Surf Photography bookings.",
       });
     }
 
@@ -118,7 +122,14 @@ const submitBookingRequest = async (req, res) => {
     const safeEmail = normalizeText(email).toLowerCase();
     const safePreferredDate = normalizeText(preferredDate);
     const safePreferredLocation = normalizeText(preferredLocation);
-    const safeSessionType = normalizeText(sessionType);
+    const safeSessionType = normalizeText(
+      sessionType || bookingType || "Tattoo Booking",
+    );
+    const safeBookingType = normalizeText(
+      bookingType || sessionType || "Tattoo Booking",
+    );
+    const safeCountry = normalizeText(country);
+    const safePhone = normalizeText(phone);
     const safeMessage = normalizeText(message);
 
     if (!emailRegex.test(safeEmail)) {
@@ -128,20 +139,15 @@ const submitBookingRequest = async (req, res) => {
     }
 
     if (safeFullName.length > 120) {
-      return res
-        .status(400)
-        .json({
-          message:
-            "Full name is too long. Please keep it under 120 characters.",
-        });
+      return res.status(400).json({
+        message: "Full name is too long. Please keep it under 120 characters.",
+      });
     }
 
     if (safeMessage.length > 2000) {
-      return res
-        .status(400)
-        .json({
-          message: "Message is too long. Please keep it under 2000 characters.",
-        });
+      return res.status(400).json({
+        message: "Message is too long. Please keep it under 2000 characters.",
+      });
     }
 
     const result = await sendBookingRequestEmail({
@@ -150,6 +156,9 @@ const submitBookingRequest = async (req, res) => {
       preferredDate: safePreferredDate,
       preferredLocation: safePreferredLocation,
       sessionType: safeSessionType,
+      bookingType: safeBookingType,
+      country: safeCountry,
+      phone: safePhone,
       message: safeMessage,
     });
 
@@ -164,12 +173,10 @@ const submitBookingRequest = async (req, res) => {
         "[contactController] failed to send booking request",
         result,
       );
-      return res
-        .status(500)
-        .json({
-          message: responseMessage,
-          error: result.error || result.reason,
-        });
+      return res.status(500).json({
+        message: responseMessage,
+        error: result.error || result.reason,
+      });
     }
 
     return res.status(200).json({

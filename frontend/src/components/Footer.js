@@ -7,7 +7,7 @@ function Footer({ onNavigate }) {
         <div className="portfolio-footer-brand-block">
           <p className="portfolio-footer-brand">JULIAN</p>
           <p className="portfolio-footer-copy">
-            Surf and ocean stories from Sri Lanka.
+            Tattoos and surf stories from Sri Lanka.
           </p>
         </div>
 
@@ -18,7 +18,7 @@ function Footer({ onNavigate }) {
           <button type="button" onClick={() => onNavigate("contact")}>
             Contact Us
           </button>
-          <button type="button" onClick={() => onNavigate("booking")}>
+          <button type="button" onClick={() => onNavigate("booking", "tattoo")}>
             Book Now
           </button>
         </div>

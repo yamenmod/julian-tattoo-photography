@@ -10,14 +10,12 @@ const {
 } = require("../utils/pricing");
 
 const normalizePassword = (value) =>
-  String(value ?? "").replace(/\s+/g, "").trim();
+  String(value ?? "")
+    .replace(/\s+/g, "")
+    .trim();
 
 const createTransporter = () => {
-  const user = (
-    process.env.SMTP_USER ||
-    process.env.EMAIL_USER ||
-    ""
-  ).trim();
+  const user = (process.env.SMTP_USER || process.env.EMAIL_USER || "").trim();
   const pass = normalizePassword(
     process.env.SMTP_PASS || process.env.EMAIL_PASS,
   );
@@ -34,7 +32,8 @@ const createTransporter = () => {
       "smtp.gmail.com"
     ).trim(),
     port: Number(process.env.SMTP_PORT || process.env.EMAIL_PORT || 587),
-    secure: Number(process.env.SMTP_PORT || process.env.EMAIL_PORT || 587) === 465,
+    secure:
+      Number(process.env.SMTP_PORT || process.env.EMAIL_PORT || 587) === 465,
     auth: { user, pass },
   });
 };
@@ -285,17 +284,21 @@ const sendBookingRequestEmail = async ({
   preferredDate,
   preferredLocation,
   sessionType,
+  bookingType,
+  country,
+  phone,
   message,
 }) => {
-  if (
-    !fullName ||
-    !email ||
-    !preferredDate ||
-    !preferredLocation ||
-    !sessionType
-  ) {
+  const requestType = (bookingType || sessionType || "Tattoo Booking").trim();
+
+  if (!fullName || !email || !preferredDate || !preferredLocation) {
     console.error("[emailService] booking request data is incomplete");
     return { success: false, reason: "missing-parameters" };
+  }
+
+  if (requestType === "Surf Photography" && (!country || !phone)) {
+    console.error("[emailService] photography booking details are incomplete");
+    return { success: false, reason: "missing-photography-details" };
   }
 
   const transporter = createTransporter();
@@ -335,11 +338,13 @@ const sendBookingRequestEmail = async ({
       <body>
         <div class="container">
           <h1>New Booking Request</h1>
+          <div class="field"><div class="label">Booking Type:</div><div class="value">${requestType}</div></div>
           <div class="field"><div class="label">Full Name:</div><div class="value">${fullName}</div></div>
           <div class="field"><div class="label">Email:</div><div class="value">${email}</div></div>
+          ${phone ? `<div class="field"><div class="label">Phone Number:</div><div class="value">${phone}</div></div>` : ""}
+          ${country ? `<div class="field"><div class="label">Country:</div><div class="value">${country}</div></div>` : ""}
           <div class="field"><div class="label">Preferred Date:</div><div class="value">${preferredDate}</div></div>
           <div class="field"><div class="label">Preferred Location:</div><div class="value">${preferredLocation}</div></div>
-          <div class="field"><div class="label">Session Type:</div><div class="value">${sessionType}</div></div>
           <div class="field"><div class="label">Additional Message:</div><div class="value message">${message || "No additional notes provided."}</div></div>
         </div>
       </body>
@@ -361,14 +366,14 @@ const sendBookingRequestEmail = async ({
       replyTo: email,
       subject: "New Booking Request - Julian Photography",
       html,
-      text: `Full Name: ${fullName}\nEmail: ${email}\nPreferred Date: ${preferredDate}\nPreferred Location: ${preferredLocation}\nSession Type: ${sessionType}\n\nAdditional Message:\n${message || "No additional notes provided."}`,
+      text: `Booking Type: ${requestType}\nFull Name: ${fullName}\nEmail: ${email}\nPhone: ${phone || "Not provided"}\nCountry: ${country || "Not provided"}\nPreferred Date: ${preferredDate}\nPreferred Location: ${preferredLocation}\n\nAdditional Message:\n${message || "No additional notes provided."}`,
     };
 
     const info = await transporter.sendMail(mailOptions);
     console.log("[emailService] booking request email sent", {
       to: adminEmail,
       from: email,
-      sessionType,
+      bookingType: requestType,
       messageId: info.messageId,
     });
 
