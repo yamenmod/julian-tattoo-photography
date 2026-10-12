@@ -113,7 +113,8 @@ const startServer = async () => {
   try {
     console.log("🚀 Starting server...");
     const port = Number(process.env.PORT || 5000);
-
+ 
+    console.log("INIT_DATABASE =", JSON.stringify(process.env.INIT_DATABASE));
     if (process.env.INIT_DATABASE === "false") {
       console.log("🗄️  Database initialization skipped (INIT_DATABASE=false)");
     } else {
