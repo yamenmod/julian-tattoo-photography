@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import api from "../utils/api";
 
 const locationsByCountry = {
-  Israel: ["Tel Aviv", "Haifa", "Jerusalem Coast", "Ashkelon", "Netanya"],
   "Sri Lanka": ["Ahangama", "Weligama", "Hiriketiya", "Unawatuna", "Mirissa"],
 };
 
@@ -163,7 +162,7 @@ function PhotographyBooking() {
                   name="phone"
                   value={formData.phone}
                   onChange={handleChange}
-                  placeholder="+972 5XX XXX XXX"
+                  placeholder="+94 7X XXX XXXX"
                   required
                 />
               </label>
@@ -177,7 +176,6 @@ function PhotographyBooking() {
                   required
                 >
                   <option value="">Select a country</option>
-                  <option value="Israel">Israel</option>
                   <option value="Sri Lanka">Sri Lanka</option>
                 </select>
               </label>

@@ -1,4 +1,5 @@
 import React from "react";
+import InstagramLink from "../components/InstagramLink";
 
 const galleryItems = [
   {
@@ -66,6 +67,7 @@ function Home({ onNavigate }) {
             commissions and photography sessions in Ahangama, Weligama, and
             nearby beaches.
           </p>
+          <InstagramLink />
         </div>
       </div>
     </div>

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import api from "../utils/api";
+import InstagramLink from "../components/InstagramLink";
 
 const initialForm = {
   name: "",
@@ -90,6 +91,7 @@ function Contact({ onNavigate }) {
             For commissions, collaborations, or a session enquiry, send a note
             below.
           </p>
+          <InstagramLink />
         </div>
 
         <div className="portfolio-form-card contact-form-card">

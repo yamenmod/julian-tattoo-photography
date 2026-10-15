@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import InstagramLink from "./InstagramLink";
 
 function Header({ currentPage, onNavigate }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -84,6 +85,7 @@ function Header({ currentPage, onNavigate }) {
               </div>
             )}
           </div>
+          <InstagramLink className="portfolio-header-instagram" />
         </nav>
       </div>
     </header>

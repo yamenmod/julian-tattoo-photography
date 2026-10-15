@@ -144,6 +144,38 @@ select {
   gap: 2rem;
 }
 
+.portfolio-instagram-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--text);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08rem;
+  text-decoration: none;
+  text-transform: uppercase;
+  opacity: 0.84;
+  transition: opacity 0.2s ease;
+}
+
+.portfolio-instagram-link:hover,
+.portfolio-instagram-link:focus-visible {
+  opacity: 1;
+}
+
+.portfolio-instagram-icon {
+  width: 1.15rem;
+  height: 1.15rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+}
+
+.portfolio-instagram-dot {
+  fill: currentColor;
+  stroke: none;
+}
+
 .portfolio-nav-link {
   background: transparent;
   border: none;
@@ -305,6 +337,11 @@ select {
   line-height: 1.5;
   letter-spacing: -0.04em;
   font-weight: 500;
+}
+
+.portfolio-bio-block .portfolio-instagram-link,
+.compact-heading .portfolio-instagram-link {
+  margin-top: 1.2rem;
 }
 
 .portfolio-page-section {

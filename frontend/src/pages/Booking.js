@@ -159,7 +159,6 @@ function Booking({ onNavigate }) {
                   required
                 >
                   <option value="">Select a location</option>
-                  <option value="Haifa, Israel">Haifa, Israel</option>
                   <option value="Weligama, Sri Lanka">
                     Weligama, Sri Lanka
                   </option>
@@ -180,7 +179,7 @@ function Booking({ onNavigate }) {
                   name="style"
                   value={formData.style}
                   onChange={handleChange}
-                  placeholder="Flowers, Leaves, Microrealist etc."
+                  placeholder="Flowers, Leaves, Minimals.."
                 />
               </label>
 

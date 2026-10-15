@@ -1,4 +1,5 @@
 import React from "react";
+import InstagramLink from "./InstagramLink";
 
 function Footer({ onNavigate }) {
   return (
@@ -21,6 +22,7 @@ function Footer({ onNavigate }) {
           <button type="button" onClick={() => onNavigate("booking", "tattoo")}>
             Book Now
           </button>
+          <InstagramLink />
         </div>
       </div>
 
