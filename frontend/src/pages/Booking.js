@@ -99,8 +99,8 @@ function Booking({ onNavigate }) {
       <div className="portfolio-shell booking-shell">
         <div className="booking-intro">
           <p>
-            Ready to turn your story into art? Now is the perfect time to book
-            your next session and bring your unique vision to life.
+            Ready to turn your story into art? Book your next tattoo session in
+            Ahangama, Sri Lanka, and bring your unique vision to life.
           </p>
         </div>
 
@@ -159,6 +159,9 @@ function Booking({ onNavigate }) {
                   required
                 >
                   <option value="">Select a location</option>
+                  <option value="Ahangama, Sri Lanka">
+                    Ahangama, Sri Lanka
+                  </option>
                   <option value="Weligama, Sri Lanka">
                     Weligama, Sri Lanka
                   </option>

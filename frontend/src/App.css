@@ -622,9 +622,21 @@ select {
 }
 
 @media (max-width: 640px) {
+  body {
+    overflow-x: hidden;
+  }
+
   .portfolio-shell,
   .portfolio-header-inner {
-    width: min(100% - 24px, 1280px);
+    width: min(100% - 32px, 1280px);
+  }
+
+  .portfolio-page-section {
+    padding: 2.5rem 0 4rem;
+  }
+
+  .booking-intro {
+    margin: 1.5rem 0 2rem;
   }
 
   .portfolio-home-gallery {
@@ -660,5 +672,62 @@ select {
   .booking-section-header {
     gap: 0.6rem;
     align-items: flex-end;
+  }
+
+  .booking-form-wrap {
+    padding-top: 0;
+  }
+
+  .booking-section-header {
+    margin: 2.5rem 0 1.25rem;
+  }
+
+  .booking-project-header {
+    margin-top: 3rem;
+  }
+
+  .booking-form {
+    gap: 1.25rem;
+  }
+
+  .booking-field-row {
+    gap: 1.25rem;
+  }
+
+  input,
+  select,
+  textarea {
+    min-height: 48px;
+    padding-top: 0.35rem;
+  }
+
+  textarea {
+    min-height: 112px;
+  }
+
+  .booking-submit-button {
+    min-height: 56px;
+    margin-top: 0.5rem;
+    padding: 0.8rem 1rem;
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 430px) {
+  .portfolio-shell,
+  .portfolio-header-inner {
+    width: min(100% - 24px, 1280px);
+  }
+
+  .booking-intro p {
+    font-size: 1.75rem;
+  }
+
+  .booking-section-header span {
+    font-size: 2.1rem;
+  }
+
+  .booking-section-header h2 {
+    font-size: 2.15rem;
   }
 }
