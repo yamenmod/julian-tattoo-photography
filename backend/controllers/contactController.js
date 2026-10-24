@@ -58,8 +58,9 @@ const submitContactForm = async (req, res) => {
         "transporter-missing",
         "recipient-missing",
         "resend-not-configured",
+        "google-apps-script-not-configured",
       ].includes(result.reason)
-        ? "Email delivery is not configured yet. Please set up the backend email provider before sending messages."
+        ? "Email delivery is not configured yet. Please set up the Google Apps Script email provider before sending messages."
         : "Email delivery failed. Your message was not sent; please try again later.";
 
       console.error("[contactController] failed to send contact email", result);
@@ -169,8 +170,9 @@ const submitBookingRequest = async (req, res) => {
         "transporter-missing",
         "recipient-missing",
         "resend-not-configured",
+        "google-apps-script-not-configured",
       ].includes(result.reason)
-        ? "Booking email delivery is not configured yet. Please set up the backend email provider before sending booking requests."
+        ? "Booking email delivery is not configured yet. Please set up the Google Apps Script email provider before sending booking requests."
         : "Booking email delivery failed. Your request was not sent; please try again later or contact Julian directly.";
 
       console.error(

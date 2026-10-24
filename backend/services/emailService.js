@@ -50,6 +50,59 @@ const getFromAddress = () => {
   return `${name} <${from}>`;
 };
 
+const sendWithGoogleAppsScript = async ({ subject, body }) => {
+  const scriptUrl = (process.env.GOOGLE_APPS_SCRIPT_URL || "").trim();
+  const scriptSecret = (process.env.GOOGLE_APPS_SCRIPT_SECRET || "").trim();
+
+  if (!scriptUrl || !scriptSecret) {
+    return {
+      success: false,
+      reason: "google-apps-script-not-configured",
+      error:
+        "GOOGLE_APPS_SCRIPT_URL and GOOGLE_APPS_SCRIPT_SECRET are required for email delivery",
+    };
+  }
+
+  try {
+    const response = await axios.post(
+      scriptUrl,
+      { secret: scriptSecret, subject, body },
+      {
+        headers: { "Content-Type": "application/json" },
+        timeout: 15000,
+        validateStatus: () => true,
+      },
+    );
+
+    if (response.status < 200 || response.status >= 300) {
+      return {
+        success: false,
+        reason: "google-apps-script-delivery-failed",
+        error: `Google Apps Script returned HTTP ${response.status}`,
+      };
+    }
+
+    if (
+      response.data?.success === false ||
+      response.data?.status === "error"
+    ) {
+      return {
+        success: false,
+        reason: "google-apps-script-delivery-failed",
+        error: "Google Apps Script rejected the email",
+      };
+    }
+
+    return { success: true, messageId: "google-apps-script" };
+  } catch (error) {
+    return {
+      success: false,
+      reason: "google-apps-script-delivery-failed",
+      error: error.message || "Google Apps Script delivery failed",
+    };
+  }
+};
+
 const sendWithResend = async ({ from, to, replyTo, subject, html, text }) => {
   const apiKey = (process.env.RESEND_API_KEY || "").trim();
   const resendFrom = (process.env.EMAIL_FROM || "").trim();
@@ -253,83 +306,24 @@ const sendContactEmail = async ({ name, email, subject, message }) => {
   }
 
   try {
-    const adminEmail = (
-      process.env.JULIAN_EMAIL ||
-      process.env.CONTACT_EMAIL ||
-      process.env.EMAIL_USER ||
-      process.env.SMTP_USER ||
-      ""
-    ).trim();
-    if (!adminEmail) {
-      return { success: false, reason: "recipient-missing" };
-    }
-
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>New Contact Form Submission</title>
-        <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
-          .container { background: #f9f9f9; padding: 30px; border-radius: 8px; }
-          h1 { color: #1f1813; margin-top: 0; }
-          .field { margin-bottom: 20px; }
-          .label { font-weight: bold; color: #5e5148; margin-bottom: 5px; }
-          .value { background: #fff; padding: 10px; border-left: 4px solid #1f1813; }
-          .message { white-space: pre-wrap; }
-          .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #999; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <h1>New Contact Form Submission</h1>
-          
-          <div class="field">
-            <div class="label">Name:</div>
-            <div class="value">${name}</div>
-          </div>
-          
-          <div class="field">
-            <div class="label">Email:</div>
-            <div class="value">${email}</div>
-          </div>
-          
-          <div class="field">
-            <div class="label">Subject:</div>
-            <div class="value">${subject}</div>
-          </div>
-          
-          <div class="field">
-            <div class="label">Message:</div>
-            <div class="value message">${message}</div>
-          </div>
-          
-          <div class="footer">
-            This message was sent from the Julian Photography website contact form.
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
-
-    const mailOptions = {
-      from: getFromAddress(),
-      to: adminEmail,
-      replyTo: email,
-      subject: "New Contact Message - Julian Photography",
-      html,
-      text: `Name: ${name}\nEmail: ${email}\nSubject: ${subject}\n\nMessage:\n${message}`,
-    };
-
-    const result = await deliverEmail(mailOptions);
+    const result = await sendWithGoogleAppsScript({
+      subject: `New Contact Message - ${subject}`,
+      body: [
+        "New Contact Form Submission",
+        "",
+        `Name: ${name}`,
+        `Email: ${email}`,
+        `Subject: ${subject}`,
+        "",
+        "Message:",
+        message,
+      ].join("\n"),
+    });
     if (!result.success) {
       return result;
     }
 
     console.log("[emailService] contact email sent", {
-      to: adminEmail,
       from: email,
       subject,
       messageId: result.messageId,
@@ -369,66 +363,30 @@ const sendBookingRequestEmail = async ({
   }
 
   try {
-    const adminEmail = (
-      process.env.JULIAN_EMAIL ||
-      process.env.CONTACT_EMAIL ||
-      process.env.EMAIL_USER ||
-      process.env.SMTP_USER ||
-      ""
-    ).trim();
-    if (!adminEmail) {
-      return { success: false, reason: "recipient-missing" };
-    }
-
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>New Booking Request</title>
-        <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 640px; margin: 0 auto; padding: 20px; }
-          .container { background: #f9f8f4; padding: 30px; border-radius: 12px; }
-          h1 { margin-top: 0; color: #1f1f1f; }
-          .field { margin-bottom: 18px; }
-          .label { font-weight: bold; color: #4f4d4a; margin-bottom: 4px; }
-          .value { background: #fff; padding: 10px 12px; border-left: 4px solid #b28d5d; }
-          .message { white-space: pre-wrap; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <h1>New Booking Request</h1>
-          <div class="field"><div class="label">Booking Type:</div><div class="value">${requestType}</div></div>
-          <div class="field"><div class="label">Full Name:</div><div class="value">${fullName}</div></div>
-          <div class="field"><div class="label">Email:</div><div class="value">${email}</div></div>
-          ${phone ? `<div class="field"><div class="label">Phone Number:</div><div class="value">${phone}</div></div>` : ""}
-          ${country ? `<div class="field"><div class="label">Country:</div><div class="value">${country}</div></div>` : ""}
-          <div class="field"><div class="label">Preferred Date:</div><div class="value">${preferredDate}</div></div>
-          <div class="field"><div class="label">Preferred Location:</div><div class="value">${preferredLocation}</div></div>
-          <div class="field"><div class="label">Additional Message:</div><div class="value message">${message || "No additional notes provided."}</div></div>
-        </div>
-      </body>
-      </html>
-    `;
-
-    const mailOptions = {
-      from: getFromAddress(),
-      to: adminEmail,
-      replyTo: email,
-      subject: "New Booking Request - Julian Photography",
-      html,
-      text: `Booking Type: ${requestType}\nFull Name: ${fullName}\nEmail: ${email}\nPhone: ${phone || "Not provided"}\nCountry: ${country || "Not provided"}\nPreferred Date: ${preferredDate}\nPreferred Location: ${preferredLocation}\n\nAdditional Message:\n${message || "No additional notes provided."}`,
-    };
-
-    const result = await deliverEmail(mailOptions);
+    const result = await sendWithGoogleAppsScript({
+      subject: `New ${requestType} Request - Julian Photography`,
+      body: [
+        "New Booking Request",
+        "",
+        `Booking Type: ${requestType}`,
+        `Session Type: ${sessionType || "Not provided"}`,
+        `Booking Type Field: ${bookingType || "Not provided"}`,
+        `Full Name: ${fullName}`,
+        `Email: ${email}`,
+        `Phone Number: ${phone || "Not provided"}`,
+        `Country: ${country || "Not provided"}`,
+        `Preferred Date: ${preferredDate}`,
+        `Preferred Location: ${preferredLocation}`,
+        "",
+        "Additional Message:",
+        message || "No additional notes provided.",
+      ].join("\n"),
+    });
     if (!result.success) {
       return result;
     }
 
     console.log("[emailService] booking request email sent", {
-      to: adminEmail,
       from: email,
       bookingType: requestType,
       messageId: result.messageId,
